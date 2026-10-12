@@ -1,16 +1,16 @@
-# Caderno Inteligente — MVP de Risco Operacional
+# Caderno Inteligente — MVP de risco e previsão de demanda
 
 Protótipo de solução baseada em dados e IA para apoio à decisão em planejamento de demanda, estoque e produção.
 
 **Objetivo:** Identificar antecipadamente riscos de ruptura e excesso de estoque, melhorando a priorização de produção e planejamento de demanda.
 
-**Status:** Versão 0.1 — Protótipo Funcional
+**Status:** Protótipo experimental. A previsão histórica é reproduzível; a decisão operacional completa e a validação prospectiva continuam pendentes.
 
 ---
 
 ## 📋 Visão Geral
 
-Este repositório contém um MVP (Minimum Viable Product) completo de um sistema de inteligência operacional para supply chain. O projeto foi desenvolvido de forma incremental, em 10 fases, combinando análise de dados, engenharia de features, baseline determinístico e modelo de machine learning.
+Este repositório contém um protótipo experimental de inteligência operacional para supply chain. Os módulos existentes cobrem partes do pipeline de dados, classificação de risco e previsão de demanda, mas ainda não compõem um fluxo operacional integrado. A auditoria requisito a requisito, com evidências e testes pendentes, está em [docs/matriz_auditoria_requisitos.md](docs/matriz_auditoria_requisitos.md).
 
 ### Hipótese Principal
 
@@ -29,7 +29,7 @@ Este repositório contém um MVP (Minimum Viable Product) completo de um sistema
 
 ## 🏗️ Arquitetura do Projeto
 
-O MVP segue uma estrutura modular dividida em **10 fases**:
+O projeto foi organizado em **10 fases**; o diagrama representa essa organização, não comprova que todas as fases estejam integradas ou completas:
 
 ```
 Fase 1: Pipeline de Dados
@@ -42,7 +42,9 @@ Fase 4: Baseline Determinístico
     ↓
 Fase 5: Modelo de Machine Learning
     ↓
-Fase 6: Backtesting (Baseline vs Modelo)
+Previsão de Demanda (módulo separado; backtest rolling-origin)
+    ↓
+Fase 6: Backtesting de risco (Baseline vs Modelo)
     ↓
 Fase 7: Priorização Final (Ranking + Recomendação)
     ↓
@@ -60,6 +62,10 @@ prototipo-ia-dados/
 ├── README.md                           # Este arquivo
 ├── requirements.txt                    # Dependências Python
 ├── .gitignore                          # Controle de versão
+├── .streamlit/
+│   └── config.toml                     # Tema visual do app
+├── assets/
+│   └── logo_caderno_inteligente.png    # Identidade visual do painel
 ├── config/
 │   └── config.yaml                    # Configuração centralizada
 ├── data/
@@ -67,6 +73,7 @@ prototipo-ia-dados/
 │   ├── processed/                     # Dados tratados e features
 │   └── README.md                      # Documentação de dados
 ├── docs/
+│   ├── matriz_auditoria_requisitos.md # Aderência, evidências e lacunas
 │   ├── desafio.md                     # Descrição do problema
 │   ├── diagnostico_dados.md           # Análise inicial dos dados
 │   ├── hipotese_solucao.md            # Hipótese do MVP
@@ -86,7 +93,8 @@ prototipo-ia-dados/
 │   │   ├── __init__.py
 │   │   ├── 04_baseline.py             # Fase 4: Baseline determinístico
 │   │   ├── 05_modelo_ml.py            # Fase 5: Modelo de classificação
-│   │   └── 07_priorizacao.py          # Fase 7: Ranking final
+│   │   ├── 07_priorizacao.py          # Fase 7: Ranking de risco
+│   │   └── forecast_demanda.py        # Forecast sazonal SKU/canal e backtest
 │   └── evaluation/
 │       ├── __init__.py
 │       ├── 06_backtesting.py          # Fase 6: Comparação de modelos
@@ -96,7 +104,8 @@ prototipo-ia-dados/
 │   ├── __init__.py
 │   └── streamlit_app.py               # Fase 8: Painel executivo
 ├── tests/
-│   └── test_dataset_analitico.py      # Testes automatizados
+│   ├── test_dataset_analitico.py      # Pipeline/dataset analítico
+│   └── test_forecast_demanda.py       # Forecast e backtest temporal
 └── notebooks/                          # Notebooks de análise (opcional)
 ```
 
@@ -142,7 +151,10 @@ python -m src.models.04_baseline
 # Fase 5: Modelo ML
 python -m src.models.05_modelo_ml
 
-# Fase 6: Backtesting
+# Forecast de demanda, comparação comercial e backtest temporal
+python -m src.models.forecast_demanda
+
+# Fase 6: Backtesting de classificação de risco
 python -m src.evaluation.06_backtesting
 
 # Fase 7: Priorização
@@ -204,16 +216,10 @@ Base fictícia do **ITA Challenge Sprint** — todos os dados, nomes, preços e 
 Carrega CSVs originais, normaliza colunas, trata tipos, converte datas, remove duplicatas e salva versões processadas em `data/processed/`.
 
 ### Fase 2 — Dataset Analítico
-Integra demanda, forecast, estoque, pedidos, ordens e lead time por **SKU × mês**. Cria base consolidada para análise.
+Agrega principalmente vendas por **SKU × mês**. Pedidos, ordens e forecast não são reconciliados em um motor operacional temporal; as limitações estão detalhadas na matriz de auditoria.
 
 ### Fase 3 — Feature Engineering
-Gera indicadores operacionais:
-- Demanda: média móvel, tendência, variabilidade
-- Estoque: cobertura em dias, relativo à demanda, vs. mínimo
-- Pedidos: quantidade, proporção da demanda
-- Capacidade: disponível, comprometida, ocupação
-- Lead time: dias, vs. horizonte
-- Risco: pressão de demanda, score operacional
+Gera features para o protótipo de risco, incluindo indicadores de demanda e estoque. Isso não constitui integração executável de capacidade, disponibilidade temporal de OPs ou lead time na previsão/recomendação.
 
 ### Fase 4 — Baseline Determinístico
 Aplica regras de negócio simples para classificar risco:
@@ -224,36 +230,36 @@ Aplica regras de negócio simples para classificar risco:
 Score = 45% baseline + 30% modelo + 15% sinais + ajustes
 
 ### Fase 5 — Modelo de Machine Learning
-Treina **regressão logística** com validação temporal (80% treino, 20% teste).
-- Sem leakage temporal
-- Pipeline de pré-processamento (imputação + normalização)
-- Métricas: accuracy, precision, recall, F1, ROC-AUC
+O módulo treina **regressão logística** para classificação de risco. A validação efetiva do classificador e sua conexão com a priorização ainda precisam de revisão; não assumir que a probabilidade de risco entra no score atual.
+- As métricas históricas documentadas não são evidência de que a classificação esteja validada ou integrada à priorização.
 
-### Fase 6 — Backtesting
-Compara baseline vs modelo em dados de teste.
-Mede: recall, precision, F1-score, detecção de ruptura.
+### Previsão de demanda
+`python -m src.models.forecast_demanda` calcula o índice sazonal da família nos 12 meses anteriores, o nível local do SKU
+pela média dos três meses dessazonalizados mais recentes e a participação dos canais nos três últimos meses observados.
+Produz forecast por SKU/canal para out–dez/2026, comparação com o forecast comercial e backtest rolling-origin.
+
+Na execução reproduzível sobre a base fictícia, o nível SKU obteve 1.650 pares, WAPE 9,1833%, MAPE 9,2066% e bias
+−4,0728%. No nível SKU × canal foram 13.200 pares, WAPE 9,1990%, MAPE 9,3463% e bias −4,0728%. Os resultados
+arredondam para as referências históricas do relatório; não demonstram desempenho prospectivo nem impacto operacional.
+Os períodos/canais e a comparação com forecast comercial são descritos em `docs/MANUAL_EXECUCAO.md`.
+
+### Fase 6 — Backtesting de risco
+Há um módulo de avaliação de risco, mas o alvo usado é derivado de uma hipótese de posição de estoque. Não interpretar seus resultados como validação independente de ruptura observada.
 
 ### Fase 7 — Priorização Final
-Gera ranking final por SKU/mês:
-- Score de risco (0-1)
-- Nível (ALTO, MEDIO, BAIXO)
-- Prioridade (1, 2, 3...)
-- Recomendação operacional
+Gera ranking experimental de risco por SKU/mês. O ranking não é uma previsão de unidades nem uma recomendação de produção executável.
 
 ### Fase 8 — Painel Executivo
-Dashboard Streamlit com:
-- Visão geral de risco
-- Ranking de prioridade
-- Distribuição por nível
-- Top 10 SKUs críticos
-- Filtros por período e SKU
+Painel Streamlit com layout profissional e filtros globais em barra lateral, dividido em quatro áreas:
+- Visão executiva (KPIs e distribuição de risco)
+- Demanda e previsão (forecast, comparação comercial e métricas de backtest)
+- Estoque e risco (evidências por SKU)
+- Plano de ação (priorização com critério e ação sugerida)
+
+Limitações estruturais continuam visíveis na própria interface: não há ainda integração completa B2B2C, capacidade, deduplicação de carteira e persistência de decisões humanas.
 
 ### Fase 9 — Relatório de Execução
-Consolida métricas:
-- Performance do baseline
-- Performance do modelo
-- Ganho relativo
-- Conclusão e recomendação
+O módulo de relatório existente não substitui uma validação de forecast prospectiva nem uma medição de impacto operacional.
 
 ### Fase 10 — Documentação Final
 Gera:
@@ -272,6 +278,9 @@ Após executar o pipeline completo, você terá:
 - `baseline_scores.csv` — Scores do baseline
 - `modelo_ruptura.joblib` — Modelo serializado
 - `backtesting_resultados.csv` — Comparação baseline vs modelo
+- `forecast_demanda.csv` — Forecast por SKU, canal e mês
+- `comparacao_forecast_comercial.csv` — Comparação de dois forecasts; não usa realizado futuro
+- `backtesting_previsao_demanda.csv` e `metricas_previsao_demanda.csv` — Backtest temporal e métricas por nível/horizonte
 - `priorizacao_final.csv` — Ranking final com recomendações
 - `relatorio_execucao.csv` — Métricas consolidadas
 
@@ -287,10 +296,10 @@ Após executar o pipeline completo, você terá:
 ## 🎯 Decisões de Design
 
 ### 1. Preservação de Dados Brutos
-Arquivos originais mantidos intactos. Cópias processadas em `data/processed/`.
+O forecast lê os CSVs de origem e grava saídas em `data/processed/`; os arquivos processados existentes não substituem validação de esquema e qualidade das fontes.
 
-### 2. Divisão Temporal vs. Aleatória
-**80% treino** (dados antigos) + **20% teste** (dados recentes) para evitar leakage temporal.
+### 2. Divisão Temporal
+O forecast usa origens temporais móveis e limita cada previsão ao histórico anterior ao mês-alvo. Seus resultados são retrospectivos na base fictícia e não são holdout independente.
 
 ### 3. Baseline Antes de ML
 Regras determinísticas simples e explicáveis, antes de complexidade de IA.
@@ -298,8 +307,8 @@ Regras determinísticas simples e explicáveis, antes de complexidade de IA.
 ### 4. Features Operacionais
 Indicadores ligados diretamente à decisão de supply chain, não features genéricas.
 
-### 5. Ensemble Simples
-Score final = combinação ponderada de baseline + modelo + sinais de negócio.
+### 5. Separação de forecast e risco
+O forecast de unidades é calculado em `src/models/forecast_demanda.py`; o ranking de risco permanece separado. Não tratar o score de risco como forecast nem assumir que o classificador esteja efetivamente integrado ao score final.
 
 ---
 
@@ -311,26 +320,16 @@ Score final = combinação ponderada de baseline + modelo + sinais de negócio.
 - **Sem sazonalidade extrema:** Calendário de eventos não capturado completamente
 - **Modelo inicial:** Regressão logística, sem hiperfinetuning
 - **Janela de teste pequena:** 20% dos dados para validação temporal
+- **Sem validação prospectiva independente:** não há realizado de out–dez/2026 e os métodos foram selecionados no backtest histórico.
+- **Integração operacional incompleta:** forecast ainda não alimenta carteira deduplicada, OPs por data de conclusão, lote mínimo nem capacidade.
+- **Jornada B2B2C incompleta:** sell-in, sell-out e estoque de parceiro ainda não entram na previsão/recomendação integrada.
+- **Governança pendente:** decisões humanas persistidas, overrides, FVA e monitoramento contínuo não implementados.
 
 ---
 
 ## 🔄 Próximos Passos Recomendados
 
-### Curto Prazo (1-2 semanas)
-1. **Validação com usuários** — apresentar painel a stakeholders operacionais
-2. **Coleta de feedback** — ajustar pesos de risco baseado em experiência
-3. **Refinamento de features** — adicionar variáveis externas
-
-### Médio Prazo (1-2 meses)
-1. **Integração de dados reais** — substituir base fictícia
-2. **Modelos avançados** — testar XGBoost, LightGBM, ensemble
-3. **Validação cruzada robusta** — time series cross-validation
-
-### Longo Prazo (3+ meses)
-1. **Deploy em produção** — API REST, pipeline automático
-2. **Alertas em tempo real** — notificações para ruptura iminente
-3. **Monitoramento contínuo** — drift de modelo, performance em produção
-4. **Integração com ERP** — sincronização automática de dados
+Seguir as prioridades da [matriz de auditoria](docs/matriz_auditoria_requisitos.md): validar os contratos dos dados; conectar previsão, carteira deduplicada, estoque e ordens temporalmente; desenvolver a visão B2B2C e recomendações justificadas; depois acrescentar persistência de decisões e validação prospectiva. Evitar deploy ou alegações de impacto antes dessas etapas.
 
 ---
 
@@ -341,16 +340,17 @@ pytest tests/ -v
 ```
 
 Testes cobrem:
-- Carregamento e validação de dados
-- Geração de features
-- Cálculo de baseline
-- Construção do modelo
-- Priorização final
+- Criação das saídas temporárias do pipeline e dataset analítico
+- Forecast por família/SKU/canal, ausência de vazamento, insuficiência de histórico
+- Métricas, backtest por origem/horizonte, comparação comercial e janela de forecast outubro–dezembro
 
+O classificador de risco, o motor operacional, a persistência de decisões e as integrações B2B2C ainda não têm cobertura
+automatizada suficiente.
 ---
 
 ## 📚 Documentação Adicional
 
+- **[docs/matriz_auditoria_requisitos.md](docs/matriz_auditoria_requisitos.md)** — aderência, evidências, testes e roadmap incremental
 - **[docs/desafio.md](docs/desafio.md)** — Descrição do problema de negócio
 - **[docs/diagnostico_dados.md](docs/diagnostico_dados.md)** — Análise inicial dos dados
 - **[docs/hipotese_solucao.md](docs/hipotese_solucao.md)** — Hipótese do MVP
@@ -437,4 +437,3 @@ Priorização → Painel Streamlit → Decisão Operacional
 **Versão:** 0.1  
 **Status:** Protótipo Funcional  
 **Última Atualização:** Outubro de 2026
-
