@@ -24,6 +24,7 @@ paginas = {
         st.Page("paginas/log_decisoes.py", title="Log de decisões", icon=":material/history:"),
     ],
     "Clube CI": [
+        st.Page("paginas/clube_site.py", title="Site do Clube", icon=":material/language:", url_path="clube-site"),
         st.Page("paginas/clube_app.py", title="App do consumidor", icon=":material/smartphone:"),
         st.Page("paginas/clube_backoffice.py", title="Backoffice do Clube", icon=":material/admin_panel_settings:"),
     ],
