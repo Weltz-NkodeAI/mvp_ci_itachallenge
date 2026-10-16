@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.cockpit import backtest, jornada, motor  # noqa: E402
+from src.cockpit import backtest, clube_sim, jornada, motor  # noqa: E402
 from src.cockpit.dados import (CALCULADO, DECLARADO, ESTIMADO, INDISPONIVEL, OBSERVADO, PREVISTO,  # noqa: E402
                                VERIFICADO, carregar_base)
 from src.models.forecast_demanda import PrevisaoDemanda  # noqa: E402
@@ -64,6 +64,23 @@ def decisoes_df() -> pd.DataFrame:
 @st.cache_data
 def risco_df() -> pd.DataFrame:
     return motor.pedidos_em_risco(base())
+
+
+@st.cache_data(show_spinner="Carregando a simulação do piloto do Clube…")
+def clube_dados() -> dict:
+    return clube_sim.gerar(base())
+
+
+def momento(numero: int, titulo: str, pergunta: str) -> None:
+    """Cabeçalho padrão de cada momento da jornada."""
+    st.caption(f"MOMENTO {numero} DE 5")
+    st.title(titulo)
+    st.markdown(f":violet[**{pergunta}**]")
+
+
+def proximo(pagina: str, rotulo: str) -> None:
+    st.divider()
+    st.page_link(pagina, label=rotulo, icon=":material/arrow_forward:")
 
 
 def badge_rec(rec: str) -> None:

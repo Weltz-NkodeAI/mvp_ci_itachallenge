@@ -10,7 +10,7 @@ def pc(v: float, casas: int = 2, sinal: bool = False) -> str:
     return (f"{v:+.{casas}f}" if sinal else f"{v:.{casas}f}").replace(".", ",")
 
 
-cabecalho("Previsão e validação", "Champion-challenger com 8 métodos no mesmo corte temporal · só dados anteriores a cada previsão")
+cabecalho("Validação do modelo", "Champion-challenger com 8 métodos no mesmo corte temporal · só dados anteriores a cada previsão")
 
 b = bt()
 res = backtest.resumo(b)

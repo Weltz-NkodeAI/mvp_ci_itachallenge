@@ -55,5 +55,7 @@ st.markdown("""
 | 5. Decisão | `src/cockpit/decisoes.py` | Registro versionado e indicadores do laço humano |
 | Segurança | `src/cockpit/seguranca.py` | 6 verificações executáveis (também no pytest) |
 | Clube | `src/cockpit/clube.py` | Validação de NF (chave de 44 dígitos) e modelo econômico |
+| Diagnóstico | `src/cockpit/diagnostico.py` | Insights da base histórica: fator único, sazonalidade, cadastro defasado, ruptura × excesso |
+| Clube (piloto) | `src/cockpit/clube_sim.py` | Simulação do piloto para o backoffice e o envio de sell-out verificado à IA |
 """)
 rodape()
