@@ -19,11 +19,22 @@ rejeita, e a decisão volta para o modelo.
 | Segurança | `src/cockpit/seguranca.py` | 6 verificações executáveis (sell-out ausente, SKU novo, pedido duplicado, OP tardia, capacidade, aprovação humana) |
 | Clube CI | `src/cockpit/clube.py` | Captura de compra por QR/NF (validação da chave de 44 dígitos, CNPJ → parceiro) e modelo econômico do ecossistema |
 
-## Páginas
+## Páginas (a história em cinco momentos)
 
-- **Decidir:** Decisão da semana · Detalhe do SKU · Jornada B2B2C · Log de decisões
-- **Confiar:** Previsão e validação · Verificações de segurança · Arquitetura e governança
-- **Crescer:** Clube CI
+| Menu | Página | Pergunta que responde |
+|---|---|---|
+| Jornada da decisão | Visão geral do ciclo | Onde estamos e como os cinco momentos se conectam? |
+| | 1. Diagnóstico histórico | Como o PCP decide hoje e o que 24 meses revelam (fator único, sazonalidade, cadastro defasado, ruptura × excesso, ponto cego, capacidade) |
+| | 2. Previsão otimizada | Quais sinais o algoritmo usa; rodar a previsão; modelo × comercial; explosão SKU × canal × mês |
+| | 3. Plano de produção e mix | Fila de decisões, carga × capacidade e distribuição do mix por canal e parceiro |
+| | 4. Rastreabilidade da conversão | Sell-out e NFC no parceiro; funil, mapa e captura de NF no consumidor |
+| | 5. Resultados e retroalimentação | Economia operacional, receita do Clube, dados de volta para a IA e projeção de 36 meses |
+| Operação | Detalhe do SKU · Log de decisões | Cálculo, evidências, aprovação humana e histórico |
+| Clube CI | App do consumidor · Backoffice do Clube | Protótipo visual do app; controle de membros, campanhas, resgates e envio para a IA |
+| Confiança | Validação do modelo · Verificações de segurança · Arquitetura e governança | 8 métodos e holdout; 6 casos ao vivo; camadas e controles |
+
+Os números do Clube vêm de `src/cockpit/clube_sim.py`, uma simulação determinística do piloto (cenário-base, 6 meses) que usa o mix
+real de SKUs e parceiros; a interface rotula esses dados como simulação.
 
 ## Como rodar
 
